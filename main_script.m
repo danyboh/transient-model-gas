@@ -1,5 +1,3 @@
-% === ЄДИНИЙ СКРИПТ ДЛЯ МОДЕЛЮВАННЯ НЕСТАЦІОНАРНОГО РУХУ ГАЗУ ===
-
 clc; clear;
 
 % === Параметри моделі ===
@@ -50,10 +48,9 @@ while t < T_end
         dt = T_end - t;
     end
 
-    % compute_rhs
     F = [rho .* u;
          rho .* u.^2 + p;
-         (U(3, :)+p) .* u];
+         (U(3, :) + p) .* u];
     F_plus = [F(:, 2:end), F(:, end)];
     F_minus = [F(:, 1), F(:, 1:end-1)];
     U_plus = [U(:, 2:end), U(:, end)];
@@ -64,7 +61,6 @@ while t < T_end
 
     U1 = U + dt * RHS1;
 
-    % 2-й етап SSPRK2
     rho = U1(1, :);
     u = U1(2, :) ./ rho;
     e = U1(3, :) ./ rho;
@@ -72,7 +68,7 @@ while t < T_end
     p = rho .* R .* T;
     F = [rho .* u;
          rho .* u.^2 + p;
-         (U1(3, :)+p) .* u];
+         (U1(3, :) + p) .* u];
     F_plus = [F(:, 2:end), F(:, end)];
     F_minus = [F(:, 1), F(:, 1:end-1)];
     U_plus = [U1(:, 2:end), U1(:, end)];
@@ -85,40 +81,16 @@ while t < T_end
     t = t + dt;
 end
 
-% === Побудова графіків ===
+% === Побудова графіків у Цельсіях ===
 rho = U(1,:);
 u = U(2,:) ./ rho;
 e = U(3,:) ./ rho;
 T = (e - 0.5 * u.^2) / Cv;
+T_C = T - 273.15;
 
-invalid_T = T <= 0 | isnan(T) | ~isreal(T);
-T(invalid_T) = 273.15;
-p = rho .* R .* T;
-p(~isfinite(p)) = 1e5;
-
-% === Розташування графіків на екрані ===
-positions = [100 600 560 420;
-             700 600 560 420;
-             100 100 560 420;
-             700 100 560 420];
-
-% Тиск
-f1 = figure; set(f1, 'Position', positions(1,:));
-plot(x, p / 1e5); ylabel('Тиск [бар]'); xlabel('Відстань [м]'); grid on; title('Розподіл тиску');
-
-% Температура
-f2 = figure; set(f2, 'Position', positions(2,:));
-plot(x, T); ylabel('Температура [K]'); xlabel('Відстань [м]'); grid on; title('Розподіл температури');
-
-% Швидкість
-f3 = figure; set(f3, 'Position', positions(3,:));
-plot(x, u); ylabel('Швидкість [м/с]'); xlabel('Відстань [м]'); grid on; title('Розподіл швидкості');
-
-% Густина
-f4 = figure; set(f4, 'Position', positions(4,:));
-plot(x, rho); ylabel('Густина [кг/м^3]'); xlabel('Відстань [м]'); grid on; title('Розподіл густини');
-
-% Запас газу
-valid = isfinite(p) & isfinite(T) & T > 0;
-K_c = trapz(x(valid), p(valid) ./ (Z * R * T(valid)));
-fprintf('Запас газу в трубопроводі (K_c): %.3f\n', K_c);
+figure;
+plot(x, T_C);
+xlabel('Довжина трубопроводу, м');
+ylabel('Температура, °C');
+title('Розподіл температури газу в трубопроводі (Цельсії)');
+grid on;
