@@ -1,24 +1,24 @@
-% === ЄДИНИЙ СКРИПТ ДЛЯ МОДЕЛЮВАННЯ НЕСТАЦІОНАРНОГО РУХУ ГАЗУ ===
+% === YEDYNYI SKRYPT DLYA MODELYUVANNYA NESTATSIONARNOHO RUKHU HAZU ===
 
 close all;
 clc; clear;
 
-% === Параметри моделі ===
+% === Parametry modeli ===
 L = 1000; Nx = 1000; T_end = 5; CFL = 0.5;
 x = linspace(0, L, Nx);
 
-% === Початкові умови ===
+% === Pochatkovi umovy ===
 p0 = 5.5e6; pL = 5.0e6; T0 = 288.15;
 R = 518.3; x_mol = [0.94 0.02 0.01 0.005 0.005 0.01 0.008 0.002];
 
-% === Властивості газу ===
+% === Vlastyvosti hazu ===
 A = 0.005; B = 0.001;
 Z = 1 + A * (p0 / 1e6) - B * T0;
 M = [16.043, 30.07, 44.097, 58.12, 58.12, 28.01, 44.01, 34.08];
 Mm = sum(x_mol .* M);
 Cv = 1.5 * 8.31451 / Mm * 1000;
 
-% === Початкові розподіли ===
+% === Pochatkovi rozpodily ===
 p_profile = linspace(p0, pL, Nx);
 rho_profile = p_profile ./ (Z * R * T0);
 u_profile = linspace(1, 3, Nx);
@@ -31,7 +31,7 @@ U(3,:) = rho_profile .* e_profile;
 
 p_initial = p_profile / 1e6;
 
-% === Ініціалізація ===
+% === Initsializatsiya ===
 dx = x(2) - x(1);
 t = 0; nt = 0;
 time_vec = [];
@@ -93,47 +93,45 @@ while t < T_end
     t = t + dt;
 end
 
-% === Графік №1 ===
+% === Hrafik #1 ===
 figure('Position', [100, 600, 700, 420]);
 plot(x, p_initial, 'LineWidth', 1.6);
 grid on;
-xlabel("Відстань по трубопроводу [м]");
-ylabel("Тиск [МПа]");
-title("Розподіл тиску природного газу в початковий момент часу");
+xlabel("L, m");
+ylabel("P, MPa");
 
-% === Графік №2 ===
+% === Hrafik #2 ===
 figure('Position', [900, 600, 700, 420]);
 subplot(2,1,1);
 plot(time_vec, p_inlet_vec, 'LineWidth', 1.5);
-ylabel("Тиск на вході [МПа]");
-grid on; title("Зміна тиску на вході в часі");
+ylabel("P, MPa");
+grid on; 
 
 subplot(2,1,2);
 plot(time_vec, q_std_vec, 'LineWidth', 1.5);
-xlabel("Час [год]"); ylabel("Витрата [м^3/год]");
-grid on; title("Зміна об''ємної витрати (зведеної до стандартних умов)");
+xlabel("t, hours"); ylabel("Q, m^3/hours");
+grid on; 
 
-% === Графік №3 ===
+% === Hrafik #3 ===
 figure('Position', [100, 100, 700, 600]);
 subplot(3,1,1);
 plot(time_vec, p_outlet_vec, 'LineWidth', 1.5);
-ylabel("Тиск на виході [МПа]");
-grid on; title("Зміна тиску на виході в часі");
+ylabel("P, MPa");
+grid on; 
 
 subplot(3,1,2);
 plot(time_vec, q_out_vec, 'LineWidth', 1.5);
-ylabel("Витрата [м^3/год]");
-grid on; title("Зміна витрати на виході в часі");
+ylabel("Q, m^3/hours");
+grid on;
 
 subplot(3,1,3);
 plot(time_vec, Z_vec, 'LineWidth', 1.5);
-xlabel("Час [год]"); ylabel("Коеф. стисливості Z");
-grid on; title("Зміна коефіцієнта стисливості в часі");
+xlabel("t, hours"); ylabel("Z");
+grid on; 
 
-% === Графік №4: Поверхня тиску ===
+% === Hrafik #4: Poverkhniia tysku ===
 [TimeGrid, XGrid] = meshgrid(time_vec, x);
 figure('Position', [900, 100, 800, 500]);
 surf(XGrid, TimeGrid, p_surface', 'EdgeColor', 'none');
-xlabel("Відстань [м]"); ylabel("Час [год]"); zlabel("Тиск [МПа]");
-title("Поверхня зміни тиску газу по довжині газопроводу в часі");
+xlabel("L, m"); ylabel("t, hours"); zlabel("P, MPa");
 view(45, 30); colorbar; shading interp;
