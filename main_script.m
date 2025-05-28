@@ -50,7 +50,6 @@ while t < T_end
         dt = T_end - t;
     end
 
-    % compute_rhs
     F = [rho .* u;
          rho .* u.^2 + p;
          (U(3, :)+p) .* u];
@@ -64,7 +63,6 @@ while t < T_end
 
     U1 = U + dt * RHS1;
 
-    % 2-й етап SSPRK2
     rho = U1(1, :);
     u = U1(2, :) ./ rho;
     e = U1(3, :) ./ rho;
@@ -96,29 +94,25 @@ T(invalid_T) = 273.15;
 p = rho .* R .* T;
 p(~isfinite(p)) = 1e5;
 
-% === Розташування графіків на екрані ===
+T_C = T - 273.15;  % Температура в Цельсіях
+
 positions = [100 600 560 420;
              700 600 560 420;
              100 100 560 420;
              700 100 560 420];
 
-% Тиск
 f1 = figure; set(f1, 'Position', positions(1,:));
 plot(x, p / 1e5); ylabel('Тиск [бар]'); xlabel('Відстань [м]'); grid on; title('Розподіл тиску');
 
-% Температура
 f2 = figure; set(f2, 'Position', positions(2,:));
-plot(x, T); ylabel('Температура [K]'); xlabel('Відстань [м]'); grid on; title('Розподіл температури');
+plot(x, T_C); ylabel('Температура [°C]'); xlabel('Відстань [м]'); grid on; title('Розподіл температури');
 
-% Швидкість
 f3 = figure; set(f3, 'Position', positions(3,:));
 plot(x, u); ylabel('Швидкість [м/с]'); xlabel('Відстань [м]'); grid on; title('Розподіл швидкості');
 
-% Густина
 f4 = figure; set(f4, 'Position', positions(4,:));
 plot(x, rho); ylabel('Густина [кг/м^3]'); xlabel('Відстань [м]'); grid on; title('Розподіл густини');
 
-% Запас газу
 valid = isfinite(p) & isfinite(T) & T > 0;
 K_c = trapz(x(valid), p(valid) ./ (Z * R * T(valid)));
 fprintf('Запас газу в трубопроводі (K_c): %.3f\n', K_c);
