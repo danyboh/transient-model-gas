@@ -3,22 +3,22 @@
 close all;
 clc; clear;
 
-% === Parametry modeli ===
+% === Параметри моделі ===
 L = 1000; Nx = 1000; T_end = 5; CFL = 0.5;
 x = linspace(0, L, Nx);
 
-% === Pochatkovi umovy ===
+% === Початкові умови ===
 p0 = 5.5e6; pL = 5.0e6; T0 = 288.15;
 R = 518.3; x_mol = [0.94 0.02 0.01 0.005 0.005 0.01 0.008 0.002];
 
-% === Vlastyvosti hazu ===
+% === Властивості газу ===
 A = 0.005; B = 0.001;
 Z = 1 + A * (p0 / 1e6) - B * T0;
 M = [16.043, 30.07, 44.097, 58.12, 58.12, 28.01, 44.01, 34.08];
 Mm = sum(x_mol .* M);
 Cv = 1.5 * 8.31451 / Mm * 1000;
 
-% === Pochatkovi rozpodily ===
+% === Початкові розподіли ===
 p_profile = linspace(p0, pL, Nx);
 rho_profile = p_profile ./ (Z * R * T0);
 u_profile = linspace(1, 3, Nx);
@@ -31,29 +31,20 @@ U(3,:) = rho_profile .* e_profile;
 
 p_initial = p_profile / 1e6;
 
-% === Initsializatsiya ===
+% === Ініціалізація ===
 dx = x(2) - x(1);
 t = 0; nt = 0;
-time_vec = [];
-p_inlet_vec = [];
-q_std_vec = [];
-p_outlet_vec = [];
-q_out_vec = [];
-Z_vec = [];
-p_surface = [];
+time_vec = []; p_inlet_vec = []; q_std_vec = [];
+p_outlet_vec = []; q_out_vec = []; Z_vec = []; p_surface = [];
 
 while t < T_end
-    rho = U(1,:);
-    u = U(2,:) ./ rho;
-    e = U(3,:) ./ rho;
+    rho = U(1,:); u = U(2,:) ./ rho; e = U(3,:) ./ rho;
     T = (e - 0.5 * u.^2) / Cv;
     p = rho .* R .* T;
     c = sqrt(1.3 * p ./ rho);
     umax = max(abs(u) + c);
     dt = CFL * dx / umax;
-    if t + dt > T_end
-        dt = T_end - t;
-    end
+    if t + dt > T_end; dt = T_end - t; end
 
     nt = nt + 1;
     time_vec(nt) = t / 3600;
@@ -75,9 +66,7 @@ while t < T_end
 
     U1 = U + dt * RHS1;
 
-    rho = U1(1,:);
-    u = U1(2,:) ./ rho;
-    e = U1(3,:) ./ rho;
+    rho = U1(1,:); u = U1(2,:) ./ rho; e = U1(3,:) ./ rho;
     T = (e - 0.5 * u.^2) / Cv;
     p = rho .* R .* T;
     F = [rho .* u;
@@ -92,7 +81,6 @@ while t < T_end
     U = 0.5 * (U + U1 + dt * RHS2);
     t = t + dt;
 end
-
 % === Hrafik #1 ===
 figure('Position', [100, 600, 700, 420]);
 plot(x, p_initial, 'LineWidth', 1.6);
