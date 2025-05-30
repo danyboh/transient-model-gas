@@ -1,4 +1,4 @@
-% === YEDYNYI SKRYPT DLYA MODELYUVANNYA NESTATSIONARNOHO RUKHU HAZU ===
+% === SINGLE SCRIPT FOR NONSTATIONARY GAS FLOW MODELING WITH LOOPED Fvnic ===
 
 close all;
 clc; clear;
@@ -10,20 +10,21 @@ x = linspace(0, L, Nx);
 % === Initial values ===
 p0 = 5.5e6; pL = 5.0e6; T0 = 288.15;
 R = 518.3; x_mol = [0.94 0.02 0.01 0.005 0.005 0.01 0.008 0.002];
-
-% === Gas properties ===
-A = 0.005; B = 0.001;
-Z = 1 + A * (p0 / 1e6) - B * T0;
 M = [16.043, 30.07, 44.097, 58.12, 58.12, 28.01, 44.01, 34.08];
 Mm = sum(x_mol .* M);
 
-% === Intitial distributions ===
+% === Initial distributions ===
 p_profile = linspace(p0, pL, Nx);
-rho_profile = p_profile ./ (Z * R * T0);
+T_init = T0 * ones(1, Nx);
+Z = zeros(1, Nx);
+for i = 1:Nx
+    [~, Z(i), ~, ~, ~, ~, ~] = Fvnic(p_profile(i), T_init(i), x_mol);
+end
+rho_profile = p_profile ./ (Z .* R .* T_init);
 u_profile = linspace(1, 3, Nx);
 [Cp_init, ~, ~] = Cp_Vnic(p_profile, T0, x_mol);
 Cv_init = Cp_init - R;
-e_profile = Cv_init * T0 + 0.5 * u_profile.^2;
+e_profile = Cv_init .* T0 + 0.5 * u_profile.^2;
 
 U = zeros(3, Nx);
 U(1,:) = rho_profile;
@@ -40,11 +41,15 @@ p_outlet_vec = []; q_out_vec = []; Z_vec = []; p_surface = [];
 
 while t < T_end
     rho = U(1,:); u = U(2,:) ./ rho; e = U(3,:) ./ rho;
-    T = (e - 0.5 * u.^2) ./ (1e-6 + ones(1,Nx));  
-    [Cp, ~, ~] = Cp_Vnic(U(1,:) .* R .* T ./ Z, T, x_mol);
+    T = (e - 0.5 * u.^2);
+    Cp = zeros(1, Nx); Cv = zeros(1, Nx); Z = zeros(1, Nx);
+    for i = 1:Nx
+        [Cp(i), ~, ~] = Cp_Vnic(rho(i) * R * T(i), T(i), x_mol);
+        [~, Z(i), ~, ~, ~, ~, ~] = Fvnic(rho(i) * R * T(i), T(i), x_mol);
+    end
     Cv = Cp - R;
     T = (e - 0.5 * u.^2) ./ Cv;
-    p = rho .* R .* T;
+    p = rho .* R .* T .* Z;
     c = sqrt(1.3 * p ./ rho);
     umax = max(abs(u) + c);
     dt = CFL * dx / umax;
@@ -53,10 +58,10 @@ while t < T_end
     nt = nt + 1;
     time_vec(nt) = t / 3600;
     p_inlet_vec(nt) = p(1) / 1e6;
-    q_std_vec(nt) = u(1) * rho(1) * (T0 / T(1)) / (Z * R) * 3600;
+    q_std_vec(nt) = u(1) * rho(1) * (T0 / T(1)) / (Z(1) * R) * 3600;
     p_outlet_vec(nt) = p(end) / 1e6;
-    q_out_vec(nt) = u(end) * rho(end) * (T0 / T(end)) / (Z * R) * 3600;
-    Z_vec(nt) = 1 + A * (p(end) / 1e6) - B * T(end);
+    q_out_vec(nt) = u(end) * rho(end) * (T0 / T(end)) / (Z(end) * R) * 3600;
+    Z_vec(nt) = Z(end);
     p_surface(nt,:) = p / 1e6;
 
     F = [rho .* u;
@@ -71,11 +76,15 @@ while t < T_end
     U1 = U + dt * RHS1;
 
     rho = U1(1,:); u = U1(2,:) ./ rho; e = U1(3,:) ./ rho;
-    T = (e - 0.5 * u.^2) ./ (1e-6 + ones(1,Nx));
-    [Cp, ~, ~] = Cp_Vnic(U1(1,:) .* R .* T ./ Z, T, x_mol);
+    T = (e - 0.5 * u.^2);
+    Cp = zeros(1, Nx); Cv = zeros(1, Nx); Z = zeros(1, Nx);
+    for i = 1:Nx
+        [Cp(i), ~, ~] = Cp_Vnic(rho(i) * R * T(i), T(i), x_mol);
+        [~, Z(i), ~, ~, ~, ~, ~] = Fvnic(rho(i) * R * T(i), T(i), x_mol);
+    end
     Cv = Cp - R;
     T = (e - 0.5 * u.^2) ./ Cv;
-    p = rho .* R .* T;
+    p = rho .* R .* T .* Z;
     F = [rho .* u;
          rho .* u.^2 + p;
          (U1(3,:)+p) .* u];
