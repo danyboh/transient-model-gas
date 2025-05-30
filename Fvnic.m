@@ -62,21 +62,30 @@ dat_vnic % Load the datas from files Dat_vnic.m to workspase
  Rom=9e3*p/(R*T*(1.1*Pp+0.7));
  c=Akl+Bkl*Om;
  [DRo,Rom,z]=fdens(p,T,Rom); iter=1;
- while abs(DRo/Rom)>=1e-6
+ iter = 1;
+max_iter = 50; 
+ while abs(DRo/Rom)>=1e-6 && iter < max_iter
  [DRo,Rom,z,A1,A2,A3,A4]=fdens(p,T,Rom);
  iter=iter+1;
  end
+ if iter > max_iter
+    warning('Fvnic did not converge after %d iterations at p = %.2f MPa, T = %.2f K', max_iter, p, T);
+end
  Rom_r = Rom;
  % Стандартні умови
  Pc=0.101325; Tc=293.15;
  Pp=Pc/Ppk;
  Rom=9e3*Pc/(R*Tc*(1.1*Pp+0.7));
  c=Akl+Bkl*Om;
+max_iter = 50;
  [DRo,Rom,zc]=fdens(Pc,Tc,Rom); iter=1;
- while abs(DRo/Rom)>=1e-6
+ while abs(DRo/Rom)>=1e-6 && iter < max_iter
  [DRo,Rom,zc]=fdens(Pc,Tc,Rom);
  iter=iter+1;
  end
+ if iter == max_iter
+    warning('Fvnic: No convergence at standard conditions (Pc=%.3f MPa, Tc=%.1f K)', Pc, Tc);
+end
  %Kc=[1 2 3 4 4]; % Number of Carbon-atoms in moleculs of components (C<k>H<2k+2>)
  %zc=1-(0.0458*sum(Kc.*x(1:5))-0.0022+0.0195*x(6)+0.075*x(7))^2; % GOST 30319.1-96
  Kvnic=z/zc;
