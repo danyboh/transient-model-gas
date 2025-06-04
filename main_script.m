@@ -1,10 +1,9 @@
-
-% === SINGLE SCRIPT FOR NONSTATIONARY GAS FLOW MODELING WITH LOOPED Fvnic + SAFETY CHECKS ===
+% === main_script.m ===
 
 close all;
 clc; clear;
 
-L = 10; Nx = 2; T_end = 5; CFL = 0.5;
+L = 2000; Nx = 500; T_end = 300; CFL = 0.5;
 x = linspace(0, L, Nx);
 
 p0 = 5.5e6; pL = 5.0e6; T0 = 288.15;
@@ -14,13 +13,16 @@ Mm = sum(x_mol .* M);
 
 p_profile = linspace(p0, pL, Nx);
 T_init = T0 * ones(1, Nx);
+
+
 Z = zeros(1, Nx);
+Cp_init = zeros(1, Nx);
 for i = 1:Nx
-    [~, Z(i), ~, ~, ~, ~, ~] = Fvnic(p_profile(i), T_init(i), x_mol);
+    [Cp_init(i), Z(i)] = CpZ_cached(p_profile(i), T_init(i), x_mol);
 end
+
 rho_profile = p_profile ./ (Z .* R .* T_init);
 u_profile = linspace(0.1, 0.5, Nx);
-[Cp_init, ~, ~] = Cp_Vnic(p_profile, T0, x_mol);
 Cv_init = real(Cp_init - R);
 Cv_init(Cv_init < 10) = 10;
 e_profile = Cv_init .* T0 + 0.5 * u_profile.^2;
@@ -31,7 +33,6 @@ U(2,:) = rho_profile .* u_profile;
 U(3,:) = rho_profile .* e_profile;
 
 p_initial = p_profile / 1e6;
-
 dx = x(2) - x(1);
 t = 0; nt = 0;
 time_vec = []; p_inlet_vec = []; q_std_vec = [];
@@ -41,15 +42,16 @@ while t < T_end
     rho = U(1,:); u = real(U(2,:) ./ rho); e = real(U(3,:) ./ rho);
     T = real(e - 0.5 * u.^2);
     T(T < 100) = 100;
-    Cp = zeros(1, Nx); Cv = zeros(1, Nx); Z = zeros(1, Nx);
+
+    Cp = zeros(1, Nx); Z = zeros(1, Nx);
     for i = 1:Nx
-        [Cp(i), ~, ~] = Cp_Vnic(rho(i) * R * T(i), T(i), x_mol);
-        [~, Z(i), ~, ~, ~, ~, ~] = Fvnic(rho(i) * R * T(i), T(i), x_mol);
+        [Cp(i), Z(i)] = CpZ_cached(rho(i) * R * T(i), T(i), x_mol);
     end
     Cv = real(Cp - R); Cv(Cv < 10) = 10;
     T = real(e - 0.5 * u.^2) ./ Cv;
     T(T < 100) = 100;
     p = real(rho .* R .* T .* Z);
+
     c = sqrt(abs(1.3 * p ./ rho));
     umax = max(abs(u) + c);
     dt = CFL * dx / umax;
@@ -64,9 +66,7 @@ while t < T_end
     Z_vec(nt) = real(Z(end));
     p_surface(nt,:) = real(p / 1e6);
 
-    F = [rho .* u;
-         rho .* u.^2 + p;
-         (U(3,:)+p) .* u];
+    F = [rho .* u; rho .* u.^2 + p; (U(3,:)+p) .* u];
     F_plus = [F(:,2:end), F(:,end)];
     U_plus = [U(:,2:end), U(:,end)];
     lambda = max(abs(u) + c);
@@ -74,21 +74,16 @@ while t < T_end
     RHS1 = -(Flux - [Flux(:,1), Flux(:,1:end-1)]) / dx;
 
     U1 = U + dt * RHS1;
-
     rho = U1(1,:); u = real(U1(2,:) ./ rho); e = real(U1(3,:) ./ rho);
-    T = real(e - 0.5 * u.^2);
-    T(T < 100) = 100;
+    T = real(e - 0.5 * u.^2); T(T < 100) = 100;
     for i = 1:Nx
-        [Cp(i), ~, ~] = Cp_Vnic(rho(i) * R * T(i), T(i), x_mol);
-        [~, Z(i), ~, ~, ~, ~, ~] = Fvnic(rho(i) * R * T(i), T(i), x_mol);
+        [Cp(i), Z(i)] = CpZ_cached(rho(i) * R * T(i), T(i), x_mol);
     end
     Cv = real(Cp - R); Cv(Cv < 10) = 10;
-    T = real(e - 0.5 * u.^2) ./ Cv;
-    T(T < 100) = 100;
+    T = real(e - 0.5 * u.^2) ./ Cv; T(T < 100) = 100;
     p = real(rho .* R .* T .* Z);
-    F = [rho .* u;
-         rho .* u.^2 + p;
-         (U1(3,:)+p) .* u];
+
+    F = [rho .* u; rho .* u.^2 + p; (U1(3,:)+p) .* u];
     F_plus = [F(:,2:end), F(:,end)];
     U_plus = [U1(:,2:end), U1(:,end)];
     lambda = max(abs(u) + c);
