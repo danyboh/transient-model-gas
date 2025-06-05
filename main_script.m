@@ -80,19 +80,20 @@ while t < T_end
 end
 
 % === Plots ===
-figure; plot(x, p_initial); grid on; xlabel("L, m"); ylabel("P, MPa");
+figure('Position', [100, 600, 700, 420]);
+plot(x, p_initial); grid on; xlabel("L, m"); ylabel("P, MPa");
 
-figure;
+figure('Position', [900, 600, 700, 420]);
 subplot(2,1,1); plot(time_vec, p_inlet_vec); ylabel("P, MPa"); grid on;
 subplot(2,1,2); plot(time_vec, q_std_vec); xlabel("t, hours"); ylabel("Q, m^3/hours"); grid on;
 
-figure;
+figure('Position', [100, 100, 700, 600]);
 subplot(3,1,1); plot(time_vec, p_outlet_vec); ylabel("P, MPa"); grid on;
 subplot(3,1,2); plot(time_vec, q_out_vec); ylabel("Q, m^3/hours"); grid on;
 subplot(3,1,3); plot(time_vec, Z_vec); xlabel("t, hours"); ylabel("Z"); grid on;
 
 [TimeGrid, XGrid] = meshgrid(time_vec, x);
-figure;
+figure('Position', [900, 100, 800, 500]);
 surf(XGrid, TimeGrid, p_surface', 'EdgeColor', 'none');
 xlabel("L, m"); ylabel("t, hours"); zlabel("P, MPa");
 view(45, 30); colorbar; shading interp;
