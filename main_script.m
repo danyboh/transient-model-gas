@@ -4,7 +4,7 @@ close all;
 clc; clear;
 
 % === Parameters ===
-L = 2000; Nx = 500; T_end = 300; CFL = 0.5;
+L = 2000; Nx = 500; T_end = 5; CFL = 0.5;
 x = linspace(0, L, Nx);
 dx = x(2) - x(1);
 
