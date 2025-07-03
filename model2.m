@@ -46,7 +46,7 @@ m   = zeros(Nx, Nt);    % mass flow, kg/s
 Z   = zeros(Nx, Nt);    % compressibility factor
 rho = zeros(Nx, Nt);    % density, kg/m^3
 
-m0     = 100;           % initial mass flow, kg/s
+m0     = 4.44;          % initial mass flow, kg/s (for 25,000 m³/h)
 
 % initialize with pressure gradient from inlet to outlet
 p(:,1)   = p0 - (p0 - p_out) * (x/L);
